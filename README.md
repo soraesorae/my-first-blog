@@ -4,7 +4,8 @@ blog
 - django
 - pillow
 - requests
-- dotenv
+- python-dotenv
+- DjangoRestFramework
 # Usage
 
 Before running, you have to set your django secret key
