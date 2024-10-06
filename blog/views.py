@@ -1,8 +1,13 @@
 from django.shortcuts import render
 from django.utils import timezone
 from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+
 from .models import Post
 from .forms import PostForm
+
+from rest_framework import viewsets, permissions
+from .serializers import PostSerializer
 
 
 def post_list(request):
@@ -16,9 +21,10 @@ def post_detail(request, pk):
     return render(request, 'blog/post_detail.html', {'post': post})
 
 
+@login_required
 def post_new(request):
     if request.method == 'POST':
-        form = PostForm(request.POST)
+        form = PostForm(request.POST, files=request.FILES)
         if form.is_valid():
             post = form.save(commit=False)
             post.author = request.user
@@ -30,10 +36,13 @@ def post_new(request):
     return render(request, 'blog/post_edit.html', {'form': form})
 
 
+@login_required
 def post_edit(request, pk):
     post = get_object_or_404(Post, pk=pk)
+    if request.user != post.author:
+        return redirect('post_detail', pk=post.pk)
     if request.method == "POST":
-        form = PostForm(request.POST, instance=post)
+        form = PostForm(request.POST, instance=post, files=request.FILES)
         if form.is_valid():
             post = form.save(commit=False)
             post.author = request.user
@@ -43,3 +52,12 @@ def post_edit(request, pk):
     else:
         form = PostForm(instance=post)
     return render(request, 'blog/post_edit.html', {'form': form})
+
+
+class blogImage(viewsets.ModelViewSet):
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
