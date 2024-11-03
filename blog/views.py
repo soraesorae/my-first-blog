@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from .models import Post
 from .forms import PostForm
 
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, authentication
 from .serializers import PostSerializer
 
 
@@ -57,7 +57,8 @@ def post_edit(request, pk):
 class blogImage(viewsets.ModelViewSet):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    authentication_classes = [authentication.SessionAuthentication, authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
